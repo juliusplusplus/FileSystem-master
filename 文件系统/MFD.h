@@ -64,8 +64,9 @@ void cmd_in_parse()
 		stringstream stream(s);
 		int i = 0;
 		//命令解析至cmd_in 中
-		while (stream >> cmd_in.cmd_num[i])
+		while (stream >> cmd_in.cmd_num[i]) {
 			i++;
+		}
 		//遍历命令列表
 		int flag = 0;
 		for (int i = 0; handlerlist[i].pname!=NULL; i++)
