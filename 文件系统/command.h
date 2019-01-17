@@ -119,14 +119,15 @@ void do_Mv()
 		}
 	}
 
-	for (int i = 0; i < FileState[curID].size(); i++)
+	//重复代码，先注释
+	/*for (int i = 0; i < FileState[curID].size(); i++)
 	{
 		if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
 		{
 			strcpy(FileState[curID][i].filename, cmd_in.cmd_num[2].c_str());
 			break;
 		}
-	}
+	}*/
 	cout << "重命名文件成功" << endl;
 }
 //void do_Write();
@@ -263,7 +264,7 @@ void do_Type()
 			break;
 		}
 	}
-	int index;
+	int index = -1;
 	for (int i = 0; i < FileState[curID].size(); i++)
 	{
 		if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
@@ -625,7 +626,7 @@ void do_Write()
 		}
 	}
 
-	int index;
+	int index = -1;
 	for (int i = 0; i < FileState[curID].size(); i++)
 	{
 		if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
@@ -634,75 +635,81 @@ void do_Write()
 			break;
 		}
 	}
-	//起始物理块
-	int address;
-	for (int i = 0; i < FileInfo[curID].size(); i++)
-	{
-		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-		{
-			address = FileInfo[curID][i].addr;
-			break;
-		}
+	if (index == -1) {
+		cout << "本用户无此目录" << endl;
 	}
-            //注意：此处发生了更改！
-			cout << "请输入buff的内容：" << endl;
-			gets_s(buf);
-			fflush(stdin);
-		
-	        //strcpy(buf, cmd_in.cmd_num[2].c_str());
+	else
+	{
+		//起始物理块
+		int address;
+		for (int i = 0; i < FileInfo[curID].size(); i++)
+		{
+			if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
+			{
+				address = FileInfo[curID][i].addr;
+				break;
+			}
+		}
+		//注意：此处发生了更改！
+		cout << "请输入buff的内容：" << endl;
+		gets_s(buf);
+		fflush(stdin);//fflush()会强迫将缓冲区内的数据写回参数stream 指定的文件中. 如果参数stream 为NULL,fflush()会将所有打开的文件数据更新
 
-			int wbegin;
-			wbegin = FileState[curID][index].write_poit;
-			
-			//找到写指针所在的最后一个磁盘
-			while (FileCluster[address].next_num != address)
+		//strcpy(buf, cmd_in.cmd_num[2].c_str());
+
+		int wbegin;
+		wbegin = FileState[curID][index].write_poit;
+
+		//找到写指针所在的最后一个磁盘
+		while (FileCluster[address].next_num != address)
+			address = FileCluster[address].next_num;
+
+		vector <int> newspace_num;//计算将要占用的物理块的数量
+		newspace_num.clear();
+
+		//int num = (256-wbegin+temp) / 256-1;
+		if (temp <= 256 - wbegin)
+			num = 0;
+		else
+		{
+			num = ceil((temp - (256 - wbegin))*1.0 / 256);
+		}
+
+		newspace_num.push_back(address);
+
+		//cout << newspace_num.size() << endl;//
+
+		for (int i = 0; i < FileCluster.size(); i++)
+		{
+			if (newspace_num.size() == num + 1)
+				break;
+			if (FileCluster[i].is_data == 0)
+			{
+				newspace_num.push_back(i);
+				FileCluster[i].is_data = 1;
+			}
+		}
+
+		for (int k = 0; k < newspace_num.size() - 1; k++)
+		{
+			FileCluster[newspace_num[k]].next_num = newspace_num[k + 1];
+		}
+		for (int i = 0; i < temp; i++)
+		{
+			if (wbegin == 256)
+			{
+				wbegin = 0;
 				address = FileCluster[address].next_num;
-
-			vector <int> newspace_num;//计算将要占用的物理块的数量
-			newspace_num.clear();
-
-			//int num = (256-wbegin+temp) / 256-1;
-			if (temp <= 256 - wbegin)
-				num = 0;
-			else
-			{
-				num = ceil((temp - (256 - wbegin))*1.0 / 256);
 			}
+			FileCluster[address].data[wbegin] = buf[i];
+			wbegin++;
+		}
 
-			newspace_num.push_back(address);
-
-			//cout << newspace_num.size() << endl;//
-
-			for (int i = 0; i < FileCluster.size(); i++)
-			{
-				if (newspace_num.size() == num+1)
-					break;
-				if (FileCluster[i].is_data == 0)
-				{
-					newspace_num.push_back(i);
-					FileCluster[i].is_data = 1;
-				}
-			}
-
-			for (int k = 0; k < newspace_num.size() - 1; k++)
-			{
-				FileCluster[newspace_num[k]].next_num = newspace_num[k + 1];
-			}
-			for (int i = 0; i < temp; i++)
-			{
-				if (wbegin == 256)
-				{
-					wbegin = 0;
-					address = FileCluster[address].next_num;
-				}
-				FileCluster[address].data[wbegin] = buf[i];
-				wbegin++;
-			}
-
-			//更新写指针
-			FileState[curID][index].write_poit = wbegin;
-			cout << "磁盘写入成功!" << endl;
-			return;
+		//更新写指针
+		FileState[curID][index].write_poit = wbegin;
+		cout << "磁盘写入成功!" << endl;
+		return;
+	}
 
 }
 
@@ -784,7 +791,7 @@ void do_Help()
 {
 	cout << "Login	userName pwd	用户登陆" << endl;
 	cout << "Logout	用户登出" << endl;
-	cout << "Register usrName pwd   用户注册" << endl;
+	cout << "Register useName pwd   用户注册" << endl;
 	cout << "Passwd	oldPwd  newPwd    修改用户口令" << endl;
 	cout << "Open   filename mode   打开文件" << endl;
 	cout << "Close  filename   关闭文件" << endl;
