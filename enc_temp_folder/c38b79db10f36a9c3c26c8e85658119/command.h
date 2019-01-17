@@ -29,14 +29,14 @@ void do_Chmod()
 			break;
 		}
 	}
-	/*for (int i = 0; i < FileState[curID].size(); i++)
+	for (int i = 0; i < FileState[curID].size(); i++)
 	{
 		if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
 		{
 			FileState[curID][i].mode = temp;
 			break;
 		}
-	}*/
+	}
 	cout << "修改权限成功!"<<endl;
 }
 void do_Chown()
